@@ -1,0 +1,22 @@
+
+```{r}
+library(glmnet)
+
+df = rio::import("./trabalho_final/happines_idx/2018.csv")
+names(df)
+```
+
+```{r}
+#  Regressão simples
+lm(`Overall rank` ~ `GDP per capita`, data = df)
+```
+
+
+```{r}
+#  Lasso
+Y = df$`Score`
+X = df[, c("GDP per capita", "Freedom to make life choices", "Overall rank")]
+
+cv = cv.glmnet(X, Y, nfolds = length(Y), alpha = 1)
+coef(cv, s = "lambda.min")
+```
