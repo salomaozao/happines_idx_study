@@ -1,22 +1,90 @@
 
 ```{r}
+rm(list = ls())
+setwd(
+  "C:/Users/GabrielNascimento/Documents/Gabriel/UFMG25-2/reg/trabalho_final"
+)
+
 library(glmnet)
+library(tidyverse)
+library(dplyr)
+library(sf)
 
-df = rio::import("./trabalho_final/happines_idx/2018.csv")
-names(df)
+hap_path = "data/happines_idx/"
+happines_list = lapply(paste0(hap_path, list.files(hap_path)), rio::import)
+
+happines_df = happines_list[[1]]
+borders_sf = st_read("data/world-administrative-boundaries.kml") |>
+  select(-Description)
+
 ```
 
-```{r}
-#  Regressão simples
-lm(`Overall rank` ~ `GDP per capita`, data = df)
+```{r Tratamento}
+# TODO:
+# - [ ] Filtrar os países que não ocorrem todos os anos
+
+# Todos numéricos menos país, NA entra na última col pq tem uma str "N/A"
+abreviations = rio::import("data/abreviations.csv")
+happines_df = happines_df |> mutate(across(-2, as.numeric))
+names(happines_df) = c(
+  "Rank",
+  "Country",
+  "Score",
+  "GDP",
+  "Soc_support",
+  "Life_expectancy",
+  "Freedom",
+  "Generosity",
+  "Corruption"
+)
+
+
+selectedBorders_sf = borders_sf |>
+  inner_join(abreviations, by = "Name") |>
+  mutate(Country = gsub("\\(.*", "", Country)) |>
+  merge(happines_df, by = "Country")
+
+
+plot(selectedBorders_sf[, c("Score", "geometry")])
+
+# # Estamos perdendo muitas linhas no join entre as borders e as abreviações
+# setdiff(happines_df$Country, selectedBorders_sf$Country)
+# setdiff(selectedBorders_sf$Country, happines_df$Country)
+
+# # Problema no merge em selectedBorders mergendo com happines_df foi resolvido no excell
+# setdiff(borders_sf$Name, abreviations$Name)
+# setdiff(abreviations$Name, borders_sf$Name)
 ```
 
 
-```{r}
-#  Lasso
-Y = df$`Score`
-X = df[, c("GDP per capita", "Freedom to make life choices", "Overall rank")]
+```{r Visualização_e_estudo}
+# TODO:
+# - [ ] Visualização da alteração anual do índice
+# - [ ] Matriz de correlação das covars
+# - [ ] Relação entre as variáveis
 
-cv = cv.glmnet(X, Y, nfolds = length(Y), alpha = 1)
-coef(cv, s = "lambda.min")
+```
+
+
+```{r Modelagem}
+# TODO:
+# - [ ] Seleção das covars (lasso?)
+# - [ ] Criação do modelo
+
+```
+
+
+```{r Visualização dos dados}
+# TODO:
+# - [ ] Mostrar coeficientes e resultados do modelo
+# - [ ] Correlação espacial (opt.)
+
+```
+
+
+```{r Conclusão}
+# TODO:
+# - [ ] Mostrar como ocorrências afetaram o índice com o tempo
+# - [ ] Como vamos mostrar os dados?
+
 ```
