@@ -10,12 +10,14 @@ library(tidyverse)
 library(dplyr)
 library(sf)
 
-hap_path = "data/happines_idx/"
-happines_list = lapply(paste0(hap_path, list.files(hap_path)), rio::import)
-
-happines_df = happines_list[[1]]
 borders_sf = st_read("data/world-administrative-boundaries.kml") |>
   select(-Description)
+abreviations = rio::import("data/abreviations.csv")
+
+hap_path = "data/happines_idx/"
+happines_list = lapply(paste0(hap_path, list.files(hap_path)), rio::import)
+happines_df = happines_list[[1]]
+
 
 ```
 
@@ -24,25 +26,26 @@ borders_sf = st_read("data/world-administrative-boundaries.kml") |>
 # - [ ] Filtrar os países que não ocorrem todos os anos
 
 # Todos numéricos menos país, NA entra na última col pq tem uma str "N/A"
-abreviations = rio::import("data/abreviations.csv")
-happines_df = happines_df |> mutate(across(-2, as.numeric))
+happines_df = happines_df |> mutate(across(-c(1, 2), as.numeric))
 names(happines_df) = c(
-  "Rank",
-  "Country",
-  "Score",
-  "GDP",
-  "Soc_support",
-  "Life_expectancy",
-  "Freedom",
-  "Generosity",
-  "Corruption"
+  "Country", # "Country"
+  "Region", # "Region"
+  "Rank", # "Happiness Rank"
+  "Score", # "Happiness Score"
+  "StdErr", # "Standard Error"
+  "GDP", # "Economy (GDP per Capita)"
+  "Family", # "Family"
+  "LifeExp", # "Health (Life Expectancy)"
+  "Freedom", # "Freedom"
+  "Trust", # "Trust (Government Corruption)"
+  "Generosity", # "Generosity"
+  "Dystopia_Res" # "Dystopia Residual"
 )
-
 
 selectedBorders_sf = borders_sf |>
   inner_join(abreviations, by = "Name") |>
   mutate(Country = gsub("\\(.*", "", Country)) |>
-  merge(happines_df, by = "Country")
+  inner_join(happines_df, by = "Country")
 
 
 plot(selectedBorders_sf[, c("Score", "geometry")])
